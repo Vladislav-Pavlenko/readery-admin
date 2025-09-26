@@ -1,0 +1,15 @@
+.form{
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.label{}
+
+.title{}
+
+.field{}
+
+.button{
+
+}

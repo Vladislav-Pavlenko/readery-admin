@@ -37,31 +37,32 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const parsed = bookSchema.safeParse(body);
 
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: "Invalid input", issues: parsed.error.format() },
-        { status: 400 },
-      );
-    }
-
-    const data = parsed.data;
-
-    const newBook = await prisma.book.create({
-      data: {
-        title: data.title,
-        description: data.description,
-        author: data.author,
-        genre: data.genre,
-        pdfUrl: data.pdfUrl,
-        imageUrl: data.imageUrl,
-      },
-    });
-
-    return NextResponse.json({
-      status: 201,
-      message: "Book created successfully",
-      data: newBook,
-    });
+    // console.log(parsed);
+    // if (!parsed.success) {
+    //   return NextResponse.json(
+    //     { error: "Invalid input", issues: parsed.error.format() },
+    //     { status: 400 },
+    //   );
+    // }
+    //
+    // const data = parsed.data;
+    //
+    // const newBook = await prisma.book.create({
+    //   data: {
+    //     title: data.title,
+    //     description: data.description,
+    //     author: data.author,
+    //     genre: data.genre,
+    //     pdfUrl: data.pdfUrl,
+    //     imageUrl: data.imageUrl,
+    //   },
+    // });
+    //
+    // return NextResponse.json({
+    //   status: 201,
+    //   message: "Book created successfully",
+    //   data: newBook,
+    // });
   } catch (error) {
     return NextResponse.json(
       { error: `Failed to create book: ${error}` },

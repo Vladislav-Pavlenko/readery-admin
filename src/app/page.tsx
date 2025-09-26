@@ -1,7 +1,66 @@
+"use client";
 import { Formik, Form, Field } from "formik";
+import styles from "./page.module.css";
+import * as Yup from "yup";
+import { useId } from "react";
+import axios from "axios";
+
+interface FormikValues {
+  title: string;
+  description: string;
+  genre: string;
+  author: string;
+  image: File | null;
+  pdf: File | null;
+}
 
 export default function Home() {
-  const aap =
+  const fieldId = {
+    title: useId(),
+    description: useId(),
+    genre: useId(),
+    author: useId(),
+    image: useId(),
+    pdf: useId(),
+  };
+
+  const bookSchema = Yup.object({
+    title: Yup.string()
+      .min(2, "Title must be at least 2 character")
+      .max(150, "Title must be at most 150 character")
+      .required("Title is required"),
+    description: Yup.string()
+      .min(10, "Description must be at least 10 character")
+      .max(1000, "Description must be at most 1000 character")
+      .required("Description is required"),
+    genre: Yup.string()
+      .min(2, "Genre must be at least 2 character")
+      .max(100, "Genre must be at most 100 character")
+      .required("Genre is required"),
+    author: Yup.string()
+      .min(2, "Author must be at least 2 character")
+      .max(100, "Author must be at most 100 character")
+      .required("Author is required"),
+  });
+
+  const handleSubmit = async (values: FormikValues) => {
+    const formData = new FormData();
+    formData.append("title", values.title);
+    formData.append("description", values.description);
+    formData.append("genre", values.genre);
+    formData.append("author", values.author);
+    if (values.image) formData.append("image", values.image);
+    if (values.pdf) formData.append("pdf", values.pdf);
+
+    try {
+      const response = await axios.post("/api/books", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      console.log("✅ Success:", response.data);
+    } catch (error) {
+      console.error("❌ Error:", error);
+    }
+  };
   return (
     <main>
       <Formik
@@ -13,57 +72,82 @@ export default function Home() {
           image: null,
           pdf: null,
         }}
-        onSubmit={(values) => {
-          console.log(values);
-        }}
+        onSubmit={handleSubmit}
+        validationSchema={bookSchema}
       >
         {({ setFieldValue }) => (
-          <Form className="flex flex-col gap-4">
-            <label>
-              <span>Title</span>
-              <Field name="title" type="text" />
+          <Form className={styles.form}>
+            <label className={styles.label} htmlFor={fieldId.title}>
+              <span className={styles.title}>Title</span>
+              <Field
+                className={styles.field}
+                name="title"
+                type="text"
+                id={fieldId.title}
+              />
             </label>
 
-            <label>
-              <span>Description</span>
-              <Field name="description" type="text" />
+            <label className={styles.label} htmlFor={fieldId.description}>
+              <span className={styles.title}>Description</span>
+              <Field
+                className={styles.field}
+                name="description"
+                type="text"
+                id={fieldId.description}
+              />
             </label>
 
-            <label>
-              <span>Genre</span>
-              <Field name="genre" type="text" />
+            <label className={styles.label} htmlFor={fieldId.genre}>
+              <span className={styles.title}>Genre</span>
+              <Field
+                className={styles.field}
+                name="genre"
+                type="text"
+                id={fieldId.genre}
+              />
             </label>
 
-            <label>
-              <span>Author</span>
-              <Field name="author" type="text" />
+            <label className={styles.label} htmlFor={fieldId.author}>
+              <span className={styles.title}>Author</span>
+              <Field
+                className={styles.field}
+                name="author"
+                type="text"
+                id={fieldId.author}
+              />
             </label>
 
-            <label>
-              <span>Image</span>
+            <label className={styles.label} htmlFor={fieldId.image}>
+              <span className={styles.title}>Image</span>
               <input
+                className={styles.field}
                 name="image"
                 type="file"
                 accept="image/*"
+                id={fieldId.image}
                 onChange={(event) => {
                   setFieldValue("image", event.currentTarget.files?.[0]);
                 }}
               />
             </label>
 
-            <label>
-              <span>PDF</span>
+            <label className={styles.label} htmlFor={fieldId.pdf}>
+              <span className={styles.title}>PDF</span>
               <input
+                className={styles.field}
                 name="pdf"
                 type="file"
                 accept="application/pdf"
+                id={fieldId.pdf}
                 onChange={(event) => {
                   setFieldValue("pdf", event.currentTarget.files?.[0]);
                 }}
               />
             </label>
 
-            <button type="submit">Submit</button>
+            <button className={styles.button} type="submit">
+              Submit
+            </button>
           </Form>
         )}
       </Formik>
