@@ -14,8 +14,8 @@ model Book {
   description String
   genre       String
   author      String
-  pdfUrl      String
-  imageUrl    String
+  pdf         Bytes?    // замість pdfUrl
+  image       Bytes?    // замість imageUrl
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

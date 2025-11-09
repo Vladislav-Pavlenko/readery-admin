@@ -1,156 +1,94 @@
 "use client";
-import { Formik, Form, Field } from "formik";
+import { useEffect, useState } from "react";
 import styles from "./page.module.css";
-import * as Yup from "yup";
-import { useId } from "react";
 import axios from "axios";
+import Link from "next/link";
 
-interface FormikValues {
+interface Book {
+  id: string;
   title: string;
   description: string;
   genre: string;
   author: string;
-  image: File | null;
-  pdf: File | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function Home() {
-  const fieldId = {
-    title: useId(),
-    description: useId(),
-    genre: useId(),
-    author: useId(),
-    image: useId(),
-    pdf: useId(),
-  };
+  const [books, setBooks] = useState<Book[]>([]);
+  useEffect(() => {
+    const handler = async () => {
+      try {
+        const response = await axios.get("/api/books");
+        setBooks(response.data.data);
+        console.log("✅ Success:", response.data);
+      } catch (err: unknown) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Unknown error";
+        console.error(errorMessage);
+      }
+    };
+    handler();
+  }, []);
 
-  const bookSchema = Yup.object({
-    title: Yup.string()
-      .min(2, "Title must be at least 2 character")
-      .max(150, "Title must be at most 150 character")
-      .required("Title is required"),
-    description: Yup.string()
-      .min(10, "Description must be at least 10 character")
-      .max(1000, "Description must be at most 1000 character")
-      .required("Description is required"),
-    genre: Yup.string()
-      .min(2, "Genre must be at least 2 character")
-      .max(100, "Genre must be at most 100 character")
-      .required("Genre is required"),
-    author: Yup.string()
-      .min(2, "Author must be at least 2 character")
-      .max(100, "Author must be at most 100 character")
-      .required("Author is required"),
-  });
-
-  const handleSubmit = async (values: FormikValues) => {
-    const formData = new FormData();
-    formData.append("title", values.title);
-    formData.append("description", values.description);
-    formData.append("genre", values.genre);
-    formData.append("author", values.author);
-    if (values.image) formData.append("image", values.image);
-    if (values.pdf) formData.append("pdf", values.pdf);
-
-    try {
-      const response = await axios.post("/api/books", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      console.log("✅ Success:", response.data);
-    } catch (error) {
-      console.error("❌ Error:", error);
-    }
-  };
   return (
-    <main>
-      <Formik
-        initialValues={{
-          title: "",
-          description: "",
-          genre: "",
-          author: "",
-          image: null,
-          pdf: null,
-        }}
-        onSubmit={handleSubmit}
-        validationSchema={bookSchema}
-      >
-        {({ setFieldValue }) => (
-          <Form className={styles.form}>
-            <label className={styles.label} htmlFor={fieldId.title}>
-              <span className={styles.title}>Title</span>
-              <Field
-                className={styles.field}
-                name="title"
-                type="text"
-                id={fieldId.title}
-              />
-            </label>
-
-            <label className={styles.label} htmlFor={fieldId.description}>
-              <span className={styles.title}>Description</span>
-              <Field
-                className={styles.field}
-                name="description"
-                type="text"
-                id={fieldId.description}
-              />
-            </label>
-
-            <label className={styles.label} htmlFor={fieldId.genre}>
-              <span className={styles.title}>Genre</span>
-              <Field
-                className={styles.field}
-                name="genre"
-                type="text"
-                id={fieldId.genre}
-              />
-            </label>
-
-            <label className={styles.label} htmlFor={fieldId.author}>
-              <span className={styles.title}>Author</span>
-              <Field
-                className={styles.field}
-                name="author"
-                type="text"
-                id={fieldId.author}
-              />
-            </label>
-
-            <label className={styles.label} htmlFor={fieldId.image}>
-              <span className={styles.title}>Image</span>
-              <input
-                className={styles.field}
-                name="image"
-                type="file"
-                accept="image/*"
-                id={fieldId.image}
-                onChange={(event) => {
-                  setFieldValue("image", event.currentTarget.files?.[0]);
-                }}
-              />
-            </label>
-
-            <label className={styles.label} htmlFor={fieldId.pdf}>
-              <span className={styles.title}>PDF</span>
-              <input
-                className={styles.field}
-                name="pdf"
-                type="file"
-                accept="application/pdf"
-                id={fieldId.pdf}
-                onChange={(event) => {
-                  setFieldValue("pdf", event.currentTarget.files?.[0]);
-                }}
-              />
-            </label>
-
-            <button className={styles.button} type="submit">
-              Submit
-            </button>
-          </Form>
-        )}
-      </Formik>
+    <main className={styles.main}>
+      <table className={styles.table}>
+        <caption className={styles.caption}>Books</caption>
+        <thead className={styles.thead}>
+          <tr className={styles.tr}>
+            <th className={styles.th} scope="col">
+              Id
+            </th>
+            <th className={styles.th} scope="col">
+              Title
+            </th>
+            <th className={styles.th} scope="col">
+              Description
+            </th>
+            <th className={styles.th} scope="col">
+              Genre
+            </th>
+            <th className={styles.th} scope="col">
+              Author
+            </th>
+            <th className={styles.th} scope="col">
+              Created At
+            </th>
+            <th className={styles.th} scope="col">
+              Updated At
+            </th>
+          </tr>
+        </thead>
+        <tbody className={styles.tbody}>
+          {books.map((book) => {
+            return (
+              <tr className={styles.tr} key={book.id}>
+                <th className={styles.th} scope="row">
+                  {book.id}
+                </th>
+                <td className={styles.th}>{book.title}</td>
+                <td className={styles.th}>{book.description}</td>
+                <td className={styles.th}>{book.genre}</td>
+                <td className={styles.th}>{book.author}</td>
+                <td className={styles.th}>{book.createdAt}</td>
+                <td className={styles.th}>{book.updatedAt}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <nav className={styles.nav}>
+        <Link className={styles.button} href="/create">
+          Create
+        </Link>
+        <Link className={styles.button} href="/update">
+          Update
+        </Link>
+        <Link className={styles.button} href="/delete">
+          Delete
+        </Link>
+      </nav>
     </main>
   );
 }

@@ -1,15 +1,37 @@
-.form{
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+.main {
+    padding: 50px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
 }
 
-.label{}
+.table{
+    overflow: scroll;
+}
 
-.title{}
+.caption {
+  font-size: 24px;
+  text-align: center;
+}
 
-.field{}
+.thead {
+  background-color: #00000046;
+}
 
-.button{
+.th {
+  border: 1px solid #000;
+  padding: 8px;
+}
 
+.nav {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.button {
+  padding: 4px 8px;
+  border: 1px solid #000;
 }

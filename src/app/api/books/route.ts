@@ -1,20 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../prisma/prisma";
 import { buildBookFilters } from "../utils/filterBooks";
-import { bookSchema } from "../utils/validation";
+import { BookFilters } from "../types/book";
 
+export const config = {
+  api: { bodyParser: false },
+};
+
+// GET /api/books?title=&author=&genre=&id=
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
 
-    const title = searchParams.get("title");
-    const author = searchParams.get("author");
-    const genre = searchParams.get("genre");
-
-    const filters = buildBookFilters({ title, author, genre });
+    const filters: BookFilters = {
+      id: searchParams.get("id") ? Number(searchParams.get("id")) : undefined,
+      title: searchParams.get("title") || undefined,
+      author: searchParams.get("author") || undefined,
+      genre: searchParams.get("genre") || undefined,
+    };
 
     const books = await prisma.book.findMany({
-      where: filters,
+      where: buildBookFilters(filters),
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        genre: true,
+        author: true,
+        createdAt: true,
+        updatedAt: true,
+      },
       orderBy: { createdAt: "desc" },
     });
 
@@ -24,77 +39,92 @@ export async function GET(req: NextRequest) {
       data: books,
       count: books.length,
     });
-  } catch (error) {
-    return NextResponse.json(
-      { error: `Failed to fetch books: ${error}` },
-      { status: 500 },
-    );
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 
+// POST /api/books
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const parsed = bookSchema.safeParse(body);
+    const formData = await req.formData();
 
-    // console.log(parsed);
-    // if (!parsed.success) {
-    //   return NextResponse.json(
-    //     { error: "Invalid input", issues: parsed.error.format() },
-    //     { status: 400 },
-    //   );
-    // }
-    //
-    // const data = parsed.data;
-    //
-    // const newBook = await prisma.book.create({
-    //   data: {
-    //     title: data.title,
-    //     description: data.description,
-    //     author: data.author,
-    //     genre: data.genre,
-    //     pdfUrl: data.pdfUrl,
-    //     imageUrl: data.imageUrl,
-    //   },
-    // });
-    //
-    // return NextResponse.json({
-    //   status: 201,
-    //   message: "Book created successfully",
-    //   data: newBook,
-    // });
-  } catch (error) {
-    return NextResponse.json(
-      { error: `Failed to create book: ${error}` },
-      { status: 500 },
-    );
+    const title = formData.get("title") as string;
+    const description = formData.get("description") as string;
+    const author = formData.get("author") as string;
+    const genre = formData.get("genre") as string;
+
+    const pdfFile = formData.get("pdf") as File | null;
+    const imageFile = formData.get("image") as File | null;
+
+    const pdfBuffer = pdfFile ? Buffer.from(await pdfFile.arrayBuffer()) : null;
+    const imageBuffer = imageFile
+      ? Buffer.from(await imageFile.arrayBuffer())
+      : null;
+
+    const newBook = await prisma.book.create({
+      data: {
+        title,
+        description,
+        author,
+        genre,
+        pdf: pdfBuffer,
+        image: imageBuffer,
+      },
+    });
+
+    return NextResponse.json({
+      status: 201,
+      message: "Book created successfully",
+      data: newBook,
+    });
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 
+// PATCH /api/books
 export async function PATCH(req: NextRequest) {
-  const bookUpdateSchema = bookSchema.partial();
   try {
-    const body = await req.json();
-    const { id, ...rest } = body;
+    const formData = await req.formData();
 
+    const id = formData.get("id") as string;
     if (!id) {
       return NextResponse.json(
         { error: "Book ID is required" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
-    const parsed = bookUpdateSchema.safeParse(rest);
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: "Invalid input", issues: parsed.error.format() },
-        { status: 400 },
-      );
-    }
+    const title = formData.get("title") as string | null;
+    const description = formData.get("description") as string | null;
+    const author = formData.get("author") as string | null;
+    const genre = formData.get("genre") as string | null;
+    const pdfFile = formData.get("pdf") as File | null;
+    const imageFile = formData.get("image") as File | null;
+
+    const updateData: {
+      title?: string;
+      description?: string;
+      author?: string;
+      genre?: string;
+      pdf?: Buffer | null;
+      image?: Buffer | null;
+    } = {};
+
+    if (title) updateData.title = title;
+    if (description) updateData.description = description;
+    if (author) updateData.author = author;
+    if (genre) updateData.genre = genre;
+    if (pdfFile) updateData.pdf = Buffer.from(await pdfFile.arrayBuffer());
+    if (imageFile)
+      updateData.image = Buffer.from(await imageFile.arrayBuffer());
 
     const updatedBook = await prisma.book.update({
-      where: { id },
-      data: parsed.data,
+      where: { id: Number(id) },
+      data: updateData,
     });
 
     return NextResponse.json({
@@ -102,14 +132,13 @@ export async function PATCH(req: NextRequest) {
       message: "Book updated successfully",
       data: updatedBook,
     });
-  } catch (error) {
-    return NextResponse.json(
-      { error: `Failed to update book: ${error}` },
-      { status: 500 },
-    );
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 
+// DELETE /api/books?id=<id>
 export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -118,20 +147,19 @@ export async function DELETE(req: NextRequest) {
     if (!idParam) {
       return NextResponse.json(
         { error: "Book ID is required" },
-        { status: 400 },
+        { status: 400 }
       );
     }
-    const id = parseInt(idParam, 10);
+
+    const id = Number(idParam);
     await prisma.book.delete({ where: { id } });
 
     return NextResponse.json({
       status: 200,
       message: "Book deleted successfully",
     });
-  } catch (error) {
-    return NextResponse.json(
-      { error: `Failed to delete book: ${error}` },
-      { status: 500 },
-    );
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

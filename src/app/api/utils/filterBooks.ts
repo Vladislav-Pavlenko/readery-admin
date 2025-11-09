@@ -1,32 +1,15 @@
-interface BookQuery {
-  title?: string | null;
-  author?: string | null;
-  genre?: string | null;
+import { BookFilters } from "../types/book";
+
+export function buildBookFilters(filters: BookFilters) {
+  const where: any = {};
+
+  if (filters.id) where.id = filters.id;
+  if (filters.title)
+    where.title = { contains: filters.title, mode: "insensitive" };
+  if (filters.author)
+    where.author = { contains: filters.author, mode: "insensitive" };
+  if (filters.genre)
+    where.genre = { contains: filters.genre, mode: "insensitive" };
+
+  return where;
 }
-
-export const buildBookFilters = (query: BookQuery) => {
-  const filters: any = {};
-
-  if (query.title) {
-    filters.title = {
-      contains: query.title,
-      mode: "insensitive",
-    };
-  }
-
-  if (query.author) {
-    filters.author = {
-      contains: query.author,
-      mode: "insensitive",
-    };
-  }
-
-  if (query.genre) {
-    filters.genre = {
-      contains: query.genre,
-      mode: "insensitive",
-    };
-  }
-
-  return filters;
-};
